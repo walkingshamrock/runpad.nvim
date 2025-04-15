@@ -1,6 +1,6 @@
-# Runpad.nvim
+# runpad.nvim
 
-Runpad.nvim is a Neovim plugin that provides a flexible runpad buffer for quick code evaluation and experimentation. It supports multiple programming languages and allows you to create, evaluate, and manage runpad buffers easily.
+runpad.nvim is a Neovim plugin that provides a flexible runpad buffer for quick code evaluation and experimentation. It supports multiple programming languages and allows you to create, evaluate, and manage runpad buffers easily.
 
 ## Features
 
