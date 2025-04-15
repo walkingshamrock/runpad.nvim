@@ -22,6 +22,28 @@ Use [Lazy.nvim](https://github.com/folke/lazy.nvim) to install runpad.nvim. Add 
 }
 ```
 
+## Configuration
+
+You can customize the supported filetypes and evaluators by using the `setup` function in your Neovim configuration. For example:
+
+```lua
+require('runpad').setup({
+    supported_filetypes = {
+        ruby = true, -- Add Ruby as a supported filetype
+    },
+    evaluators = {
+        ruby = function(content)
+            local handle = io.popen("ruby -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
+            local result = handle:read("*a")
+            handle:close()
+            return (result or ""):gsub("%s+$", "")
+        end,
+    },
+})
+```
+
+This allows you to add support for additional languages and define custom evaluators for them. The `RunpadOpen` command will automatically include these filetypes in its autocompletion list.
+
 ## Commands
 
 - `:RunpadOpen <filetype>`: Open a new runpad buffer with the specified filetype.
