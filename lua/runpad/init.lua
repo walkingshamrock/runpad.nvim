@@ -1,9 +1,50 @@
 local M = {}
 
+-- Add a configuration table for user customization
+M.config = {
+    supported_filetypes = { lua = true, python = true, r = true, javascript = true },
+    evaluators = {
+        lua = function(content)
+            local chunk, err = load(content)
+            if not chunk then
+                return "Error: " .. err
+            end
+            local success, result = pcall(chunk)
+            if success then
+                return "Result: " .. tostring(result)
+            else
+                return "Error: " .. result
+            end
+        end,
+        python = function(content)
+            local handle = io.popen("python3 -c \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
+            local result = handle:read("*a")
+            handle:close()
+            return (result or ""):gsub("%s+$", "")
+        end,
+        r = function(content)
+            local handle = io.popen("Rscript -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
+            local result = handle:read("*a")
+            handle:close()
+            return (result or ""):gsub("%s+$", "")
+        end,
+        javascript = function(content)
+            local handle = io.popen("node -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
+            local result = handle:read("*a")
+            handle:close()
+            return (result or ""):gsub("%s+$", "")
+        end,
+    },
+}
+
 -- Helper function to check if a filetype is supported
 local function is_supported_filetype(filetype)
-    local supported_filetypes = { lua = true, python = true, r = true, javascript = true }
-    return supported_filetypes[filetype] or false
+    return M.config.supported_filetypes[filetype] or false
+end
+
+-- Function to update the configuration
+function M.setup(user_config)
+    M.config = vim.tbl_deep_extend("force", M.config, user_config or {})
 end
 
 -- Create a new runpad buffer with a unique name
@@ -66,33 +107,10 @@ function M.eval_runpad()
     local content = table.concat(lines, "\n")
     local filetype = vim.api.nvim_buf_get_option(buf, "filetype")
 
-    if filetype == "lua" then
-        local chunk, err = load(content)
-        if not chunk then
-            print("Error: " .. err)
-        else
-            local success, result = pcall(chunk)
-            if success then
-                print("Result: " .. tostring(result))
-            else
-                print("Error: " .. result)
-            end
-        end
-    elseif filetype == "python" then
-        local handle = io.popen("python3 -c \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
-        local result = handle:read("*a")
-        handle:close()
-        print((result or ""):gsub("%s+$", ""))
-    elseif filetype == "r" then
-        local handle = io.popen("Rscript -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
-        local result = handle:read("*a")
-        handle:close()
-        print((result or ""):gsub("%s+$", ""))
-    elseif filetype == "javascript" then
-        local handle = io.popen("node -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
-        local result = handle:read("*a")
-        handle:close()
-        print((result or ""):gsub("%s+$", ""))
+    local evaluator = M.config.evaluators[filetype]
+    if evaluator then
+        local result = evaluator(content)
+        print(result)
     else
         print("Evaluation is not supported for filetype: " .. filetype)
     end
@@ -132,7 +150,11 @@ vim.api.nvim_create_user_command('RunpadOpen', function(opts)
 end, {
     nargs = 1,
     complete = function()
-        return { "lua", "python", "r", "javascript" }
+        local filetypes = {}
+        for ft, _ in pairs(M.config.supported_filetypes) do
+            table.insert(filetypes, ft)
+        end
+        return filetypes
     end
 })
 
