@@ -11,7 +11,7 @@ runpad.nvim is a Neovim plugin that provides a flexible runpad buffer for quick 
 
 ## Installation
 
-Use [Lazy.nvim](https://github.com/folke/lazy.nvim) to install Runpad.nvim. Add the following to your Lazy.nvim configuration:
+Use [Lazy.nvim](https://github.com/folke/lazy.nvim) to install runpad.nvim. Add the following to your Lazy.nvim configuration:
 
 ```lua
 {
