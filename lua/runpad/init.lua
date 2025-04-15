@@ -1,10 +1,44 @@
 local M = {}
 
--- Setup function for user configuration
+-- Add a configuration table for user customization
+M.config = {
+    evaluators = {
+        lua = function(content)
+            local chunk, err = load(content)
+            if not chunk then
+                return "Error: " .. err
+            end
+            local success, result = pcall(chunk)
+            if success then
+                return "Result: " .. tostring(result)
+            else
+                return "Error: " .. result
+            end
+        end,
+        python = function(content)
+            local handle = io.popen("python3 -c \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
+            local result = handle:read("*a")
+            handle:close()
+            return (result or ""):gsub("%s+$", "")
+        end,
+        javascript = function(content)
+            local handle = io.popen("node -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
+            local result = handle:read("*a")
+            handle:close()
+            return (result or ""):gsub("%s+$", "")
+        end,
+        r = function(content)
+            local handle = io.popen("Rscript -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
+            local result = handle:read("*a")
+            handle:close()
+            return (result or ""):gsub("%s+$", "")
+        end,
+    },
+}
+
+-- Update the setup function to allow user customization
 function M.setup(user_config)
-    -- Currently, no configurable options are available.
-    -- This function is a placeholder for future configurations.
-    print("Runpad setup called.")
+    M.config = vim.tbl_deep_extend("force", M.config, user_config or {})
 end
 
 -- Open a new tab with the specified filetype and set the tab name
@@ -20,7 +54,7 @@ function M.open_runpad(filetype)
     vim.cmd("file runpad:" .. filetype .. ":" .. buf) -- Set the tab name
 end
 
--- Evaluate the content of the current runpad buffer
+-- Update the eval_runpad function to use custom evaluators
 function M.eval_runpad()
     local buf_name = vim.api.nvim_buf_get_name(0)
     if not buf_name:match("runpad:") then
@@ -32,33 +66,10 @@ function M.eval_runpad()
     local content = table.concat(lines, "\n")
     local filetype = vim.bo.filetype
 
-    if filetype == "lua" then
-        local chunk, err = load(content)
-        if not chunk then
-            print("Error: " .. err)
-        else
-            local success, result = pcall(chunk)
-            if success then
-                print("Result: " .. tostring(result))
-            else
-                print("Error: " .. result)
-            end
-        end
-    elseif filetype == "python" then
-        local handle = io.popen("python3 -c \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
-        local result = handle:read("*a")
-        handle:close()
-        print((result or ""):gsub("%s+$", ""))
-    elseif filetype == "javascript" then
-        local handle = io.popen("node -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
-        local result = handle:read("*a")
-        handle:close()
-        print((result or ""):gsub("%s+$", ""))
-    elseif filetype == "r" then
-        local handle = io.popen("Rscript -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
-        local result = handle:read("*a")
-        handle:close()
-        print((result or ""):gsub("%s+$", ""))
+    local evaluator = M.config.evaluators[filetype]
+    if evaluator then
+        local result = evaluator(content)
+        print(result)
     else
         print("Error: Evaluation is not supported for filetype: " .. filetype)
     end
@@ -107,13 +118,17 @@ function M.toggle_runpad()
     end
 end
 
--- Command registration
+-- Update the completion function to dynamically fetch filetypes from the configuration
 vim.api.nvim_create_user_command('RunpadOpen', function(opts)
     M.open_runpad(opts.args)
 end, {
     nargs = 1,
     complete = function()
-        return { "lua", "python", "javascript", "r" } -- Example filetypes
+        local filetypes = {}
+        for ft, _ in pairs(M.config.evaluators) do
+            table.insert(filetypes, ft)
+        end
+        return filetypes
     end
 })
 

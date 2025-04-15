@@ -28,9 +28,6 @@ You can customize the supported filetypes and evaluators by using the `setup` fu
 
 ```lua
 require('runpad').setup({
-    supported_filetypes = {
-        ruby = true, -- Add Ruby as a supported filetype
-    },
     evaluators = {
         ruby = function(content)
             local handle = io.popen("ruby -e \"" .. content:gsub("\\", "\\\\"):gsub("\"", "\\\"") .. "\"")
