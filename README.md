@@ -2,6 +2,10 @@
 
 runpad.nvim is a Neovim plugin that provides a flexible runpad buffer for quick code evaluation and experimentation. It supports multiple programming languages and allows you to create, evaluate, and manage runpad buffers easily.
 
+Thank you for considering supporting this project! Your generosity helps keep development active and ensures the plugin continues to improve.
+
+[![Buy Me A Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-yellow?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/walkingshamrock)
+
 ## Features
 
 - Create a new runpad buffer for supported filetypes (Lua, Python, R, JavaScript).
